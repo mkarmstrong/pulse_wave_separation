@@ -1,4 +1,3 @@
-# WaveIntensity
-Wave intensity analysis in R
+# Wave Intensity Analysis in R
 
 Details to come
