@@ -1,4 +1,4 @@
-# Wave intensity/separation Analysis in R
+# Wave intensity/separation analysis in R
 
 The function herein separates a pressure and flow wave (sampled at 200hz) into its forward and backward traveling components via an R implementation of wave intensity/separation analysis.
 
