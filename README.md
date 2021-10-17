@@ -1,3 +1,33 @@
-# Wave Intensity Analysis in R
+# Wave Intensity/Seperation Analysis in R
 
-Details to come
+The function herein separates a pressure and flow wave into its forward and backward traveling components via an R implementation of wave intensity/separation analysis.
+
+The function returns the following values:
+
+
+**Variable**      | **Description**
+------------------|-------------------------
+tmaxp             | Time to max pressure
+wi1               | Peak forward net WI
+wit1              | Time to wi1
+wia1              | Area under wi1
+wi0               | Peak backward net WI
+wit0              | Time to wi0
+wia0              | Area under wi0
+wi2               | Second peak net WI
+wit2              | Time to wi2
+wia2              | Area under wi2
+wrm               | wave reflection magnitude wia0/wia1
+zc                | Character impedance (PU loop)
+zcss              | Character impedance (Sum of squares)
+comp              | Compliance (PU loop)
+compss            | Compliance (sum of squares)
+pbmax             | Peak backward pressure
+intpb             | Integral of Pb
+pbt               | Time to pbmax
+pfmax             | Peak forward pressure
+intpf             | Integral of Pf
+pft               | time to pfmax
+rm                | Reflection magnitude (pbmax/pfmax)
+ri                | Resistance index
+
