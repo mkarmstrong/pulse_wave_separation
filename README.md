@@ -4,7 +4,7 @@ The function herein separates a pressure and flow wave (sampled at 200hz) into i
 
 Load function:
 ```R
-xyz
+devtools::source_url("https://raw.githubusercontent.com/mkarmstrong/WaveIntensity/main/WaveIntensity4.R")
 ```
 
 
