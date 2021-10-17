@@ -46,3 +46,6 @@ pft               | time to pfmax
 rm                | Reflection magnitude (pbmax/pfmax)
 ri                | Resistance index
 
+<br/><br/>
+
+![alt text](WIRplot.png)
