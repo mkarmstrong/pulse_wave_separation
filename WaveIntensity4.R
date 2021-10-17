@@ -34,6 +34,8 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     s = length(x)
     dx = signal::filter(B, A, x)
     dx = c(dx[7], dx[7], dx[7], dx[7:s], dx[s], dx[s], dx[s])
+      
+    return(dx)
   }
   
   Tintersect <- function(wf) {
@@ -47,7 +49,6 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     xint <- (-yint / pred1$y)
     
     return(xint)
-    
   }
   
   MattLag <- function(x, k) {
@@ -55,11 +56,13 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
       d1 <- tail(x, k)
       d2 <- c(rep(NA, k), x)[1:length(x)]
       d2[is.na(d2)] <- d1
+        
       return(d2)
     } else {
       b1 <- head(x, abs(k))
       b2 <- c(x[(-k + 1):length(x)], rep(NA, -k))
       b2[is.na(b2)] <- b1
+        
       return(b2)
     }
   }
@@ -107,7 +110,6 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
       uensavg <-
         MattLag(uensavg, maxlag) # Lag flow so it aligns with pressure
     }
-    
   }
     
     
@@ -125,6 +127,7 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     m = 1,
     ts = 1
   )
+    
   due = signal::sgolayfilt(
     uensavg,
     p = 2,
@@ -140,8 +143,8 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   # The slope of P ~ U in early systole = blood density (rho) * compliance (c)
   linea <- 
     lm(pensavg[round(xint.U):(lmmax+round(xint.U))] ~ uensavg[round(xint.U):(lmmax+round(xint.U))])
-  rho = 1050                     # Blood density
-  rhoc = linea$coefficients[[2]] # Slope = Zc
+  rho = 1050                       # Blood density
+  rhoc = linea$coefficients[[2]]   # Slope = Zc
   c = rhoc / rho                   # c = wave speed
   
   # Rhoc.ss is rhoc but calculated via the sum of squares method
@@ -153,10 +156,10 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   
   dpep = (dpe + rhoc * due) / 2 # Forward pressure difference eg. (P+Zc*U)/2
   dpem = (dpe - rhoc * due) / 2 # Backward pressure difference eg. (P-Zc*U)/2
-  duem = -dpem / rhoc       # Backward velocity difference
-  duep = dpep / rhoc        # Forward velocity difference
-  diep = dpep * duep        # Forward wave intensity
-  diem = dpem * duem        # Backward wave intensity
+  duem = -dpem / rhoc           # Backward velocity difference
+  duep = dpep / rhoc            # Forward velocity difference
+  diep = dpep * duep            # Forward wave intensity
+  diem = dpem * duem            # Backward wave intensity
   
     
   # Wave separation ---------------------------------------------------------
@@ -165,7 +168,7 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   pept = which.max(pep) / sr # time
   
   pem = (pensavg - uensavg * rhoc) / 2 # Pb
-  pemt = which.max(pem) / sr # time
+  pemt = which.max(pem) / sr           # time
   
   
   # Save Variables ----------------------------------------------------------
@@ -173,7 +176,7 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   TImaxp = which.max(pensavg)                 # time of max P
   
   lsys = which.min(dpe[TImaxp:length(dpe)])
-  lsys = round(lsys) + 4                        # round + 4 samples for margin of error
+  lsys = round(lsys) + 4                      # round + 4 samples for margin of error
   lsys = lsys + TImaxp
   
   
@@ -225,12 +228,12 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   
   if (is.null(w2)) {
     isw2 = TRUE
-    w2val = NA              # WI @ w2
-    w2loc = NA              # index of w2
+    w2val = NA                  # WI @ w2
+    w2loc = NA                  # index of w2
   } else {
     isw2 = FALSE
-    w2val = w2[1]           # WI @ w2
-    w2loc = dnotch - w2[2] + 1   # index of w2
+    w2val = w2[1]               # WI @ w2
+    w2loc = dnotch - w2[2] + 1  # index of w2
   }
   
   
@@ -365,12 +368,12 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
         diep,
         col = "dodgerblue3",
         lwd = 2,
-        lty = 1)   # forward intensity
+        lty = 1)
   
   lines(tens,
         die,
         col = 1,
-        lwd = 2)                         # backward intensity
+        lwd = 2) 
   
   abline(v = tens[w1loc],
          col = "aquamarine4",
