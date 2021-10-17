@@ -1,9 +1,24 @@
 # Wave Intensity/Seperation Analysis in R
 
-The function herein separates a pressure and flow wave into its forward and backward traveling components via an R implementation of wave intensity/separation analysis.
+The function herein separates a pressure and flow wave (sampled at 200hz) into its forward and backward traveling components via an R implementation of wave intensity/separation analysis.
+
+Load function:
+```R
+xyz
+```
+
+
+Run function:
+```R
+ans <- WaveIntensity4.0(mydata$pressure, 
+                        mydata$flow, 
+                        align = FALSE)
+```
+
+Set `align = TRUE` if presure and flow curve require time alingment.
+<br/><br/>
 
 The function returns the following values:
-
 
 **Variable**      | **Description**
 ------------------|-------------------------
