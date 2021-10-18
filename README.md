@@ -15,7 +15,7 @@ ans <- WaveIntensity4(mydata$pressure,
                       align = FALSE)
 ```
 
-Set `align = TRUE` if presure and flow curves require time alingment.
+Set `align = TRUE` if presure and flow curves require time alignment.
 <br/><br/>
 
 The function returns the following values:
