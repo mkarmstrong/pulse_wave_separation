@@ -1,13 +1,9 @@
 WaveIntensity4 <- function(pressure, flow, align = F) {
     
   #  Wave Intensity 4.0
-  #  Matthew K. Armstrong (matthew-k-armstrong@uiowa.edu)
+  #  Matthew K. Armstrong (mkrmstrong@uiowa.edu)
   #  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007
-  #  Copyright 2021 Matthew K. Armstrong (matthew.armstrong@utas.edu.au)
-  #  Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
-  #  Everyone is permitted to copy and distribute verbatim copies
-  #  of this license document, but changing it is not allowed.
-  #
+  
   #  This program is distributed in the hope that it will be useful,
   #  but WITHOUT ANY WARRANTY; without even the implied warranty of
   #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
