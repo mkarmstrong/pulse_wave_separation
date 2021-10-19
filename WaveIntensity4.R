@@ -1,9 +1,13 @@
-WaveIntensity4 <- function(pressure, flow, align = F) {
+WaveIntensity4 <- function(pressure, flow, align = T) {
     
   #  Wave Intensity 4.0
-  #  Matthew K. Armstrong (mkrmstrong@uiowa.edu)
+  #  Matthew K. Armstrong (matthew-k-armstrong@uiowa.edu)
   #  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007
-  
+  #  Copyright 2021 Matthew K. Armstrong (matthew.armstrong@utas.edu.au)
+  #  Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+  #  Everyone is permitted to copy and distribute verbatim copies
+  #  of this license document, but changing it is not allowed.
+  #
   #  This program is distributed in the hope that it will be useful,
   #  but WITHOUT ANY WARRANTY; without even the implied warranty of
   #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -30,8 +34,6 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     s = length(x)
     dx = signal::filter(B, A, x)
     dx = c(dx[7], dx[7], dx[7], dx[7:s], dx[s], dx[s], dx[s])
-      
-    return(dx)
   }
   
   Tintersect <- function(wf) {
@@ -45,6 +47,7 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     xint <- (-yint / pred1$y)
     
     return(xint)
+    
   }
   
   MattLag <- function(x, k) {
@@ -52,16 +55,37 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
       d1 <- tail(x, k)
       d2 <- c(rep(NA, k), x)[1:length(x)]
       d2[is.na(d2)] <- d1
-        
       return(d2)
     } else {
       b1 <- head(x, abs(k))
       b2 <- c(x[(-k + 1):length(x)], rep(NA, -k))
       b2[is.na(b2)] <- b1
-        
       return(b2)
     }
   }
+  
+  dicrotic <- function(pw, plot = FALSE) {
+    
+    dp <- fsg721(pw)
+    end <- length(pw)
+    nni <- which.min(dp)
+    dp2dias <- fsg721(dp[nni:end])
+    x = seq(0,1, length = length(dp2dias))
+    d <- dbeta(x, 2, 10)
+    dd <- (min(dp2dias) + (d - min(d)) * (max(dp2dias) - min(dp2dias)) / (max(d) - min(d)))
+    
+    fsect <- which.max(dp2dias * dd)
+    notch <- (nni + fsect) - 1
+    
+    if(isTRUE(plot)) {
+      plot(pw, type = "l", lwd=2)
+      abline(v=notch)
+    }
+    
+    return(notch)
+    
+  }
+  
   
   # Load data
   sr <- 200
@@ -110,7 +134,7 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     
     
   # WAVE INTENSITY ----------------------------------------------------------
-    
+  
   # Matt method
   # p = filter order
   # n = filter length (must be odd)
@@ -123,7 +147,6 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
     m = 1,
     ts = 1
   )
-    
   due = signal::sgolayfilt(
     uensavg,
     p = 2,
@@ -139,8 +162,8 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   # The slope of P ~ U in early systole = blood density (rho) * compliance (c)
   linea <- 
     lm(pensavg[round(xint.U):(lmmax+round(xint.U))] ~ uensavg[round(xint.U):(lmmax+round(xint.U))])
-  rho = 1050                       # Blood density
-  rhoc = linea$coefficients[[2]]   # Slope = Zc
+  rho = 1050                     # Blood density
+  rhoc = linea$coefficients[[2]] # Slope = Zc
   c = rhoc / rho                   # c = wave speed
   
   # Rhoc.ss is rhoc but calculated via the sum of squares method
@@ -152,10 +175,10 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   
   dpep = (dpe + rhoc * due) / 2 # Forward pressure difference eg. (P+Zc*U)/2
   dpem = (dpe - rhoc * due) / 2 # Backward pressure difference eg. (P-Zc*U)/2
-  duem = -dpem / rhoc           # Backward velocity difference
-  duep = dpep / rhoc            # Forward velocity difference
-  diep = dpep * duep            # Forward wave intensity
-  diem = dpem * duem            # Backward wave intensity
+  duem = -dpem / rhoc       # Backward velocity difference
+  duep = dpep / rhoc        # Forward velocity difference
+  diep = dpep * duep        # Forward wave intensity
+  diem = dpem * duem        # Backward wave intensity
   
     
   # Wave separation ---------------------------------------------------------
@@ -164,7 +187,7 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   pept = which.max(pep) / sr # time
   
   pem = (pensavg - uensavg * rhoc) / 2 # Pb
-  pemt = which.max(pem) / sr           # time
+  pemt = which.max(pem) / sr # time
   
   
   # Save Variables ----------------------------------------------------------
@@ -172,20 +195,14 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   TImaxp = which.max(pensavg)                 # time of max P
   
   lsys = which.min(dpe[TImaxp:length(dpe)])
-  lsys = round(lsys) + 4                      # round + 4 samples for margin of error
+  lsys = round(lsys) + 4                        # round + 4 samples for margin of error
   lsys = lsys + TImaxp
   
   
-  # Find diacrotic notch ----------------------------------------------------
+  # Find dicrotic notch ----------------------------------------------------
   
-  dp <- fsg721(pensavg)
-  nn <- which.min(dp)
-  end <- length(p)
-  
-  dpdias <- fsg721(fsg721(p[nn:end]))
-  fsect <- which.max(dpdias)
-  dnotch <- (fsect + nn) + 1
-  
+  dnotch <- dicrotic(p)
+
   notch.t <- tens[dnotch]
   notch.p <- pensavg[dnotch]
     
@@ -224,12 +241,12 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   
   if (is.null(w2)) {
     isw2 = TRUE
-    w2val = NA                  # WI @ w2
-    w2loc = NA                  # index of w2
+    w2val = NA              # WI @ w2
+    w2loc = NA              # index of w2
   } else {
     isw2 = FALSE
-    w2val = w2[1]               # WI @ w2
-    w2loc = dnotch - w2[2] + 1  # index of w2
+    w2val = w2[1]           # WI @ w2
+    w2loc = dnotch - w2[2] + 1   # index of w2
   }
   
   
@@ -364,12 +381,12 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
         diep,
         col = "dodgerblue3",
         lwd = 2,
-        lty = 1)
+        lty = 1)   # forward intensity
   
   lines(tens,
         die,
         col = 1,
-        lwd = 2) 
+        lwd = 2)                         # backward intensity
   
   abline(v = tens[w1loc],
          col = "aquamarine4",
@@ -478,4 +495,5 @@ WaveIntensity4 <- function(pressure, flow, align = F) {
   
   return(Final_data)
   
+
 }
