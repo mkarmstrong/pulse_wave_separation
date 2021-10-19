@@ -53,4 +53,5 @@ Results will also be sent to the plot tab for inspection:
 ![alt text](WIRplot.png)
 
 You may want to work on making the detection of the dicrotic notch more robust, but for the most part, the current implementation works for most cases.
+
 Enjoy!
