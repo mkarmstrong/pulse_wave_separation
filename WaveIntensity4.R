@@ -62,23 +62,6 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
   
   dicrotic <- function(pw, plot=FALSE) {
     
-    fsg721 <- function(x) {
-      # 1st derivative with SG filter
-      #2nd order polynomial
-      C = c(0.107143, 0.071429, 0.035714)
-      B = integer(7)
-      for (i in 1:3) {
-        B[i] = C[i]
-      }
-      B[4] = 0.0
-      for (i in 5:7) {
-        B[i] = -C[8 - i]
-      }
-      A = c(1, 0)
-      s = length(x)
-      dx = signal::filter(B, A, x)
-      dx = c(dx[7], dx[7], dx[7], dx[7:s], dx[s], dx[s], dx[s])
-    }
     find_peaks <- function (x, m = 3){
       shape <- diff(sign(diff(x, na.pad = FALSE)))
       pks <- sapply(which(shape < 0), FUN = function(i){
