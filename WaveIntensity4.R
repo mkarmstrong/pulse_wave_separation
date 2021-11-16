@@ -16,7 +16,7 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
   # Required functions
   fsg721 <- function(x) {
     # 1st derivative with SG filter
-    #2nd order polynomial
+    # 2nd order polynomial
     C = c(0.107143, 0.071429, 0.035714)
     B = integer(7)
     for (i in 1:3) {
@@ -60,25 +60,102 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
     }
   }
   
-  dicrotic <- function(pw, plot = FALSE) {
+  dicrotic <- function(pw, plot=FALSE) {
     
-    dp <- fsg721(pw)
-    end <- length(pw)
-    nni <- which.min(dp)
-    dp2dias <- fsg721(dp[nni:end])
-    x = seq(0,1, length = length(dp2dias))
-    d <- dbeta(x, 2, 10)
-    dd <- (min(dp2dias) + (d - min(d)) * (max(dp2dias) - min(dp2dias)) / (max(d) - min(d)))
-    
-    fsect <- which.max(dp2dias * dd)
-    notch <- (nni + fsect) - 1
-    
-    if(isTRUE(plot)) {
-      plot(pw, type = "l", lwd=2)
-      abline(v=notch)
+    fsg721 <- function(x) {
+      # 1st derivative with SG filter
+      #2nd order polynomial
+      C = c(0.107143, 0.071429, 0.035714)
+      B = integer(7)
+      for (i in 1:3) {
+        B[i] = C[i]
+      }
+      B[4] = 0.0
+      for (i in 5:7) {
+        B[i] = -C[8 - i]
+      }
+      A = c(1, 0)
+      s = length(x)
+      dx = signal::filter(B, A, x)
+      dx = c(dx[7], dx[7], dx[7], dx[7:s], dx[s], dx[s], dx[s])
+    }
+    find_peaks <- function (x, m = 3){
+      shape <- diff(sign(diff(x, na.pad = FALSE)))
+      pks <- sapply(which(shape < 0), FUN = function(i){
+        z <- i - m + 1
+        z <- ifelse(z > 0, z, 1)
+        w <- i + m + 1
+        w <- ifelse(w < length(x), w, length(x))
+        if(all(x[c(z : i, (i + 2) : w)] <= x[i + 1])) return(i + 1) else return(numeric(0))
+      })
+      pks <- unlist(pks)
+      pks
     }
     
-    return(notch)
+    # Get derivatives
+    dp1 <- fsg721(pw)
+    dp2 <- fsg721(fsg721(pw))
+    dp3 <- fsg721(fsg721(fsg721(pw)))
+    
+    
+    # FIND DICROTIC DEPRESSION ------------------------------------------------
+    
+    # Isolate notch area with 2nd and 3rd derivatives
+    nni <- which.min(dp1)
+    end <- length(pw)
+    end2 <- length(pw) - round(length(nni:end)/1.7)
+    Max_dp2_dbp <- which.max(dp2[nni:end2]) + nni - 2
+    Min_dp3_dbp <- which.min(dp3[nni:end2]) + nni
+    #resid <- lm(pw[Max_dp2_dbp:Min_dp3_dbp] ~ time(pw[Max_dp2_dbp:Min_dp3_dbp]))$residuals
+    
+    # De-trend notch area
+    narea <- pw[Max_dp2_dbp:Min_dp3_dbp]
+    resid <- NA
+    for(i in 1:length(narea)) {
+      resid[i] <- narea[i] - narea[1]
+    }
+    
+    #plot(resid)
+    
+    # Find notch
+    dic <- unname(which.min(resid)) + Max_dp2_dbp - 1
+    
+    if(dic >= Min_dp3_dbp-1) {
+      dic <- (length(narea)/2) + Max_dp2_dbp
+    }
+    
+    # # Testing plots
+    # plot(pw);abline(v=c(Max_dp2_dbp, dic, Min_dp3_dbp, end2),
+    #                 lty=c(3,1,3,3),
+    #                 col=c("grey","red","grey","grey"),
+    #                 lwd=2)
+    
+    
+    # FIND DICROTIC PEAK ------------------------------------------------------
+    
+    above <- dp1[(dic+2):end2] > 0
+    dia <- NA
+    if(TRUE %in% above) {
+      dia <- which(diff(above) < 0) + (dic+2)
+    } else {
+      dia <- which.min(dp2[dic:end2]) + dic
+    }
+    
+    # plot(pw[dic:end2])
+    # par(new=T)
+    # plot(dp2[dic:end2])
+    # abline(v=which.min(dp2[dic:end2]))
+    
+    
+    # PLOTS -------------------------------------------------------------------
+    
+    if(isTRUE(plot)) {
+      plot(pw, type = "l", lwd=2, ylab="BP (mmHg)")
+      abline(v=c(dic, dia), col="grey", lty=3, lwd=2)
+      mtext(c("Ed", "P3"), side = 3, at = c(dic,dia))
+    }
+    
+    return(data.frame(dicrotic_notch = dic, dicrotic_peak = dia))
     
   }
   
@@ -197,7 +274,7 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
   
   # Find dicrotic notch ----------------------------------------------------
   
-  dnotch <- dicrotic(p)
+  dnotch <- dicrotic(p)$dicrotic_notch
 
   notch.t <- tens[dnotch]
   notch.p <- pensavg[dnotch]
@@ -301,38 +378,8 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
   par(
     mfrow = c(2, 2),
     mar = c(3.5, 3.5, .5, .5),
-    mgp = c(2, 1, 0))
-  
-  # Plot P and U
-  plot(
-    tens,
-    pensavg,
-    type = "l",
-    lwd = 2,
-    ylab = "Pressure & flow (mmHg)",
-    xlab = "Time (s)",
-    frame.plot = F)
-  
-  grid()
-  
-  par(new = TRUE)
-  
-  plot(
-    tens,
-    uensavg,
-    type = "l",
-    lwd = 2,
-    col = "firebrick",
-    xaxt = 'n',
-    yaxt = 'n',
-    ann = FALSE,
-    frame.plot = F)
-  
-  abline(
-    v = c(xt.P, notch.t),
-    col = 'black',
-    lwd = 2,
-    lty = 3)
+    mgp = c(2, 1, 0)
+  )
   
   # Plot Zc
   plot(
@@ -346,17 +393,12 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
     lwd = 0.9,
     cex = 1.2,
     frame.plot = F)
-  
   grid()
-  
   clip(uensavg[round(xint.U)],
        uensavg[lmmax + round(xint.U)],
        -1000,
        1000)
-  
-  abline(linea,
-         col = "firebrick",
-         lwd = 3)
+  abline(linea, col = "firebrick", lwd = 3)
   
   # Plot WI
   plot(
@@ -370,34 +412,15 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
     ylab = expression(paste("Wave Intensity (W/m" ^ "2" * ")")),
     ylim = c(min(diem, na.rm = T), max(die, na.rm = T)),
     frame.plot = F)
-  
   grid()
+  lines(tens, diep, col = "dodgerblue3", lwd = 2, lty = 1)   # forward intensity
+  lines(tens, die, col = 1, lwd = 2)                         # backward intensity
   
-  lines(tens,
-        diep,
-        col = "dodgerblue3",
-        lwd = 2,
-        lty = 1)   # forward intensity
-  
-  lines(tens,
-        die,
-        col = 1,
-        lwd = 2)                         # backward intensity
-  
-  abline(v = tens[w1loc],
-         col = "aquamarine4",
-         lty = 3,
-         lwd = 2)
-  
-  abline(v = tens[w0loc],
-         col = "dodgerblue3",
-         lty = 3,
-         lwd = 2)
-  
-  abline(v = tens[w2loc],
-         col = "firebrick",
-         lty = 3,
-         lwd = 2)
+  abline(v = tens[w1loc], col = "aquamarine4", lty = 3, lwd = 2)
+  abline(v = tens[w0loc], col = "firebrick", lty = 3, lwd = 2)
+  abline(v = tens[w2loc], col = "dodgerblue3", lty = 3, lwd = 2)
+  abline(h = 0, lwd = 2, lty = 2, col = "grey65")
+  #abline(v = tens[length(die[1:w0loc][die[1:w0loc] >= 0])], col = "aquamarine3", lty = 2, lwd = 2)
   
   # Plot Pf & Pb
   plot(
@@ -405,22 +428,41 @@ WaveIntensity4 <- function(pressure, flow, align = T) {
     pensavg,
     type = "l",
     lwd = 2,
-    ylab = "Pb & Pf (mmHg)",
+    ylab = "Pressure (mmHg)",
     xlab = "Time (s)",
-    ylim = c(min(pem), max(pensavg + 2)),
+    ylim = c(min(pem), max(pensavg+2)),
     frame.plot = F)
+  grid()
+  lines(tens, pep, col = "dodgerblue3", lwd = 2)
+  lines(tens, pem, col = "firebrick", lwd = 2)
   
+  # Plot P and U
+  plot(
+    tens,
+    pensavg,
+    type = "l",
+    lwd = 2,
+    ylab = "Pressure (mmHg)",
+    xlab = "Time (s)",
+    #ylim = c(-0.1, max(P + 5)),
+    frame.plot = F)
   grid()
   
-  lines(tens,
-        pep,
-        col = "dodgerblue3",
-        lwd = 2)
-  
-  lines(tens,
-        pem,
-        col = "firebrick",
-        lwd = 2)
+  par(new=TRUE)
+  plot(
+    tens,
+    uensavg,
+    type = "l",
+    lwd = 2,
+    col = "firebrick",
+    xaxt='n', 
+    yaxt='n', 
+    ann=FALSE,
+    #ylim = c(-0.1, max(P + 5)),
+    frame.plot = F)
+  #axis(side=2, line=3)
+  #mtext(side=2, line=5, "Velocity (cm/s)")
+  abline(v=notch.t, lwd=2, lty=3)
   
   
   # Results -----------------------------------------------------------------
