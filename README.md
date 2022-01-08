@@ -1,6 +1,6 @@
 # Wave intensity/separation analysis in R
 
-The function herein separates the pressure wave (requires flow wave, sampled at 200hz) into its forward and backward traveling components via an R implementation of wave intensity/separation analysis.
+The function herein separates the pressure wave (requires simultaneously measured pressure and flow waves sampled at 200hz) into forward and backward traveling components via an R implementation of wave intensity/separation analysis.
 
 Load function:
 ```R
