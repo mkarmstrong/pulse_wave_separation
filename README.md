@@ -50,6 +50,6 @@ ri                | Resistance index
 
 Results will also be sent to the plot tab for inspection:
 
-![alt text](WIRplot.png)
+![alt text](WI_plot.png)
 
 Enjoy!
