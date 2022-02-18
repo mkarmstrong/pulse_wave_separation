@@ -10,9 +10,11 @@ devtools::source_url("https://raw.githubusercontent.com/mkarmstrong/WaveIntensit
 
 Run function:
 ```R
-ans <- WaveIntensity4(mydata$pressure, 
-                      mydata$flow, 
-                      align = FALSE)
+ans <- WaveAnalyses(mydata$pressure, 
+                    mydata$flow, 
+                    lowpass = FALSE,
+                    align = FALSE,
+                    plot = TRUE)
 ```
 
 Set `align = TRUE` if presure and flow curves require time alignment.
