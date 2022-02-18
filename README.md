@@ -22,28 +22,44 @@ The function returns the following values:
 
 **Variable**      | **Description**
 ------------------|-------------------------
-tmaxp             | Time to max pressure
-wi1               | Peak forward net WI
-wit1              | Time to wi1
-wia1              | Area under wi1
-wi0               | Peak backward net WI
-wit0              | Time to wi0
-wia0              | Area under wi0
-wi2               | Second peak net WI
-wit2              | Time to wi2
-wia2              | Area under wi2
-wrm               | wave reflection magnitude wia0/wia1
-zc                | Character impedance (PU loop)
-zcss              | Character impedance (Sum of squares)
-comp              | Compliance (PU loop)
-compss            | Compliance (sum of squares)
-pbmax             | Peak backward pressure
-intpb             | Integral of Pb
-pbt               | Time to pbmax
-pfmax             | Peak forward pressure
-intpf             | Integral of Pf
-pft               | time to pfmax
-rm                | Reflection magnitude (pbmax/pfmax)
+sbp               | Systolic BP
+Tsbp              | Time to systolic BP
+dbp               | Diastolic BP
+Tdbp              | Time to diastolic BP
+p1                | BP at p1
+Tp1               | Time to p1
+p2                | BP at p2
+Tp2               | Time to p2
+ed                | BP at incisura
+Ted               | Ejection duration
+p3                | BP at incisura peak
+Tp3               | Time to incisura peak
+Aix               | Augmentation index
+qmax              | Peak flow
+Tqmax             | Time to peak flow
+qfoot             | Flow at end diastole
+qmean             | Mean flow
+wi1               | Peak forward compresion wave
+Twi1              | Time to peak FCW
+Awi1              | Area under FCW
+wi0               | Peak backward compresion wave
+Twi0              | Time to peak BCW
+Awi0              | Area under BCW
+wi2               | Peak forward decompresion wave
+Twi2              | Time to peak FDW
+Awi2              | Area under FDW
+wrm               | Wave reflection magnitude
+zc                | Characteristic impedance (pu loop)
+zcss              | Characteristic impedance (sum of squares)
+comp              | Arterial complience (pu loop)
+compss            | Arterial complience (sum of squares)
+pfmax             | Peak forward BP
+Tpfmax            | Time to peak Pf
+Apf               | Area under Pf
+pbmax             | Peak backward BP         
+Tpbmax            | Time to peak Pb
+Apb               | Area under Pb
+rm                | Reflection magnitude
 ri                | Resistance index
 
 <br/><br/>
