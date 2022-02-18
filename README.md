@@ -20,6 +20,12 @@ ans <- WaveAnalyses(mydata$pressure,
 Set `align = TRUE` if presure and flow curves require time alignment.
 <br/><br/>
 
+Results will be sent to the plot tab for inspection:
+
+![alt text](WI_plot.png)
+
+<br/><br/>
+
 The function returns the following values:
 
 **Variable**      | **Description**
@@ -65,9 +71,5 @@ rm                | Reflection magnitude
 ri                | Resistance index
 
 <br/><br/>
-
-Results will also be sent to the plot tab for inspection:
-
-![alt text](WI_plot.png)
 
 Enjoy!
