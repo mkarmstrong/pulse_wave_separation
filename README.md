@@ -4,7 +4,7 @@ The function herein separates the pressure wave (requires simultaneously measure
 
 Load function:
 ```R
-devtools::source_url("https://raw.githubusercontent.com/mkarmstrong/WaveIntensity/main/WaveIntensity4.R")
+devtools::source_url("https://raw.githubusercontent.com/mkarmstrong/WaveIntensity/main/WaveAnalyses.R")
 ```
 
 
