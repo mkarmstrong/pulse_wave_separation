@@ -1,26 +1,26 @@
 # Wave intensity/separation analysis in R
 
-The function herein separates the pressure wave (requires simultaneously measured pressure and flow waves sampled at 200hz) into forward and backward traveling components via an R implementation of wave intensity/separation analysis.
+The R script herein separates the blood pressure waveform into its forward and backward traveling components using simultaneously measured blood pressure and flow waves sampled at 200hz.
 
-Load function:
+To load the function:
 ```R
 devtools::source_url("https://raw.githubusercontent.com/mkarmstrong/WaveIntensity/main/WaveAnalyses.R")
 ```
 
 
-Run function:
+To run the function:
 ```R
 ans <- WaveAnalyses(mydata$pressure, 
                     mydata$flow, 
-                    lowpass = FALSE,
-                    align = FALSE,
-                    plot = TRUE)
+                    lowpass = FALSE, # apply a lowpass filter to the pressure wave?
+                    align = FALSE,   # time align the pressure & flow wave?
+                    plot = TRUE)     # Plot results?
 ```
 
 Set `align = TRUE` if presure and flow curves require time alignment.
 <br/><br/>
 
-Results will be sent to the plot tab for inspection:
+If `plot = TRUE` Results will be sent to the plot tab for inspection:
 
 ![alt text](WI_plot.png)
 
