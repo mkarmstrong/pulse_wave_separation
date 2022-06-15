@@ -67,77 +67,46 @@ WaveAnalyses <- function(pressure,
     # Isolate notch area with 2nd and 3rd derivatives
     nni <- which.min(dp1)
     end <- length(pw)
-    end2 <- length(pw) - round(length(nni:end)/3)
-    Max_dp2_dbp <- which.max(dp2[nni:end2]) + nni - 2
-    Min_dp3_dbp <- which.min(dp3[nni:end2]) + nni
-    #resid <- lm(pw[Max_dp2_dbp:Min_dp3_dbp] ~ time(pw[Max_dp2_dbp:Min_dp3_dbp]))$residuals
     
-    # De-trend notch area
-    narea <- pw[Max_dp2_dbp:Min_dp3_dbp]
-    resid <- NA
-    for(i in 1:length(narea)) {
-      resid[i] <- narea[i] - narea[1]
-    }
+    # End index without potential perturbation at end diastole  
+    end2 <- end * .9
     
-    #plot(resid)
-    
-    # Find notch
-    dic <- unname(which.min(resid)) + Max_dp2_dbp - 1
-    
-    if(dic >= Min_dp3_dbp-1) {
-      #dic <- (length(narea)/2) + Max_dp2_dbp
-      dic <- Max_dp2_dbp + 3
-    }
-    
-    # # Testing plots
-    # plot(pw);abline(v=c(Max_dp2_dbp, dic, Min_dp3_dbp, end2),
-    #                 lty=c(3,1,3,3),
-    #                 col=c("grey","red","grey","grey"),
-    #                 lwd=2)
+    # Dicrotic notch from local dp2 max
+    dic <- which.max(dp2[nni:end2]) + nni - 1
+
+    # plot(pw, type="l", lwd=2)
+    # par(new=T)
+    # plot(dp2, type='o',col="grey")
+    # abline(v = dic, h = 0)
     
     
     # FIND DICROTIC PEAK ------------------------------------------------------
     
-    above <- dp1[(dic+2):end2] > 0
-    dia <- NA
-    if(TRUE %in% above) {
-      dia <- which(diff(above) < 0) + (dic+2)
-      dia <- dia[which.max(pw[dia])]
+    end3 <- ((end - dic) * .6) + dic # 60% of diastolic duration
+    abline(v=end3, lty=2, col=2)
+    
+    if(sum(dp2[dic:end3] < 0) < 1) {
+      dia <- 9999
     } else {
-      dia <- which.min(dp2[dic:end2]) + dic
+      dia <- which.min(dp2[dic:end3]) + dic - 1
     }
     
-    # plot(pw); abline(v=dia)
-    # plot(pw[dic:end2])
+    # plot(pw, type="l", lwd=2)
     # par(new=T)
-    # plot(dp1[dic:end2]); abline(h=0)
-    # abline(v=dia-(dic))
+    # plot(dp2, type='o',col="grey")
+    # abline(v = c(dic, dia), h = 0)
     
     
     # PLOTS -------------------------------------------------------------------
     
     if(isTRUE(plot)) {
-      
-      # Testing plots
-      plot(pw, type = 'l', lwd = 2)
-      points(x = c(dic,dia),
-             y = c(pw[dic], pw[dia]),
-             pch = "|",
-             col = "red",
-             cex = 1.5)
-      abline(
-        v = c(Max_dp2_dbp, Min_dp3_dbp, end2),
-        lty = c(3, 3, 3),
-        col = c("grey", "grey", "grey"),
-        lwd = 2
-      )
-      
-      # plot(pw, type = "l", lwd=2, ylab="BP (mmHg)")
-      # abline(v=c(dic, dia), col="grey", lty=3, lwd=2)
+      plot(pw, type = "l", lwd=2, ylab="BP (mmHg)")
+      abline(v=c(dic, dia), col="grey", lty=3, lwd=2)
       mtext(c("Ed", "P3"), side = 3, at = c(dic,dia))
     }
     
-    return(data.frame(dicrotic_notch = dic, dicrotic_peak = dia))
+    return(data.frame(dicrotic_notch = dic, 
+                      dicrotic_peak = dia))
     
   }
   
