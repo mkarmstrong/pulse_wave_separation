@@ -4,9 +4,16 @@ WaveAnalyses <- function(pressure,
                          align = FALSE, 
                          plot = FALSE) {
   
-  #  Wave Intensity V5
+  #  Wave Intensity V4
   #  Matthew K. Armstrong (matthew-k-armstrong@uiowa.edu)
   #  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007
+  
+  # pressure = averaged pressure waveform (numeric)
+  # flow = averaged flow waveform (numeric)
+  # lowpass = apply 10Hz low pass to pressure waveform (T/F)
+  # align = time align pressure and flow waveforms (T/F)
+  # plot = plot results (T/F)
+  
   
   # Set up ------------------------------------------------------------------
   
@@ -27,6 +34,21 @@ WaveAnalyses <- function(pressure,
     s = length(x)
     dx = signal::filter(B, A, x)
     dx = c(dx[7], dx[7], dx[7], dx[7:s], dx[s], dx[s], dx[s])
+  }
+  
+  MattLag <- function(x, k) {
+    
+    if (k > 0) {
+      d1 <- tail(x, k)
+      d2 <- c(rep(NA, k), x)[1:length(x)]
+      d2[is.na(d2)] <- d1
+      return(d2)
+    } else {
+      b1 <- head(x, abs(k))
+      b2 <- c(x[(-k + 1):length(x)], rep(NA, -k))
+      b2[is.na(b2)] <- b1
+      return(b2)
+    }
   }
   
   Tintersect <- function(wf, plot = FALSE) {
@@ -73,7 +95,7 @@ WaveAnalyses <- function(pressure,
     
     # Dicrotic notch from local dp2 max
     dic <- which.max(dp2[nni:end2]) + nni - 1
-
+    
     # plot(pw, type="l", lwd=2)
     # par(new=T)
     # plot(dp2, type='o',col="grey")
@@ -83,7 +105,7 @@ WaveAnalyses <- function(pressure,
     # FIND DICROTIC PEAK ------------------------------------------------------
     
     end3 <- ((end - dic) * .6) + dic # 60% of diastolic duration
-    abline(v=end3, lty=2, col=2)
+    #abline(v=end3, lty=2, col=2)
     
     if(sum(dp2[dic:end3] < 0) < 1) {
       dia <- 9999
@@ -111,6 +133,7 @@ WaveAnalyses <- function(pressure,
   }
   
   low.pass <- function(y, fq, do.plot = FALSE) {
+    
     # Second order low pass filter
     # Removes high frequency components below fq
     # y = a numeric vector, typically a tree-ring series.
@@ -131,7 +154,7 @@ WaveAnalyses <- function(pressure,
       f <- fq
     }
     
-    ## sort f in case it's passed in backwards
+    # sort f in case it's passed in backwards
     f <- sort(f)
     
     filt <- signal::butter(
@@ -141,35 +164,62 @@ WaveAnalyses <- function(pressure,
       plane = "z"
     )
     
-    ## remove mean
+    # remove mean
     yAvg <- mean(y)
     y <- y - yAvg
     
-    ## pad the data to twice the max period
+    # pad the data to twice the max period
     pad <- max(p) * 2
     ny <- length(y)
-    ## pad the data
+    
+    # pad the data
     yPad <- c(y[pad:1], y, y[ny:(ny - pad)])
-    ## run the filter
+    
+    # run the filter
     yFilt <- signal::filtfilt(filt, yPad)
-    ## unpad the filtered data
+    
+    # unpad the filtered data
     yFilt <- yFilt[(pad + 1):(ny + pad)]
-    ## return with mean added back in
+    
+    # return with mean added back in
     filt.sig <- yFilt + yAvg
     
     if(isTRUE(do.plot)){
-      ## plot results
+      
+      # plot results
       plot(filt.sig,
            type = "l",
            lwd = 2)
     }
     
-    ## return filtered signal
+    # return filtered signal
     return(filt.sig)
     
   }
   
-  pwa <- function(pw, filt = F, plot = FALSE) {
+  pwa <- function(x, filt = FALSE, plot = FALSE) {
+    
+    pw <- x
+    
+    # Load functions
+    RootSpline1 <- function (x, y, y0 = 0, verbose = TRUE) {
+      if (is.unsorted(x)) {
+        ind <- order(x)
+        x <- x[ind]; y <- y[ind]
+      }
+      z <- y - y0
+      ## which piecewise linear segment crosses zero?
+      k <- which(z[-1] * z[-length(z)] <= 0)
+      ## analytical root finding
+      xr <- x[k] - z[k] * (x[k + 1] - x[k]) / (z[k + 1] - z[k])
+      ## make a plot?
+      if (verbose) {
+        plot(x, y, "l"); abline(h = y0, lty = 2)
+        points(xr, rep.int(y0, length(xr)))
+      }
+      ## return roots
+      xr
+    }
     
     # Low pass waveform
     if (isTRUE(filt)) {
@@ -182,9 +232,6 @@ WaveAnalyses <- function(pressure,
     d3 <- fsg721(fsg721(fsg721(pw)))
     d4 <- fsg721(fsg721(fsg721(fsg721(pw))))
     
-    # Create time
-    time <- (0:(length(pw)-1)) / 200
-    
     # Some additional calcs
     end <- length(pw)
     foot <- Tintersect(pw) - 1
@@ -194,37 +241,30 @@ WaveAnalyses <- function(pressure,
     notch <- notchdat$dicrotic_notch
     notchpeak <- notchdat$dicrotic_peak
     
-    # plot(pw,type="o"): abline(v=foot)
+    # plot(pw,type="o")
+    # abline(v=c(foot, notch, notchpeak))
     
-    # Find p1 from 4th derivative
-    above <- d4[foot:end] > 0
-    above[1:10] <- FALSE
-    n1 <- which(diff(above) < 0)
-    n2 <- n1[1]
-    p1i <- n2+(foot-1)
+    # Create time
+    time <- (0:(length(pw)-1)) / 200
+    X <- 1:length(pw)
     
-    # plot(pw,type="l")
+    # get zero crossing of 4th derivative
+    zero_cross <- RootSpline1(X[round(foot):end], d4[round(foot):end], 
+                              verbose = F)
+    
+    # index of p1
+    p1i <- zero_cross[2]
+    
+    # plot
+    # plot(pw[foot:end], type='l', lwd=2, col='grey',yaxt='n',ylab="")
     # par(new=T)
-    # plot(d4,type="l",col=3);abline(h=0,v=p1i,col=2)
-    # par(new=T)
-    # plot(d1,type='l')
+    # plot(d4,type="l",xaxt='n',lwd=2,ylab="4th derivative")
+    # abline(h=0,v=p1i,col=2,lwd=1.5)
     
     # Find p2 from 3rd derivative
     p2i <- which.min(d3[maxpi:(notch - 5)]) + maxpi
     
-    # # Find p2 from 4th derivative (P3d is better method)
-    # below <- d4[maxpi:notch] < 0
-    # blw1 <- which(diff(below) < 0) + 1
-    # blw2 <- blw1[1]
-    # p2i <- blw2 + (maxpi)
-    # 
-    # plot(pw[maxpi:(notch)],type="l"); abline(v = c(p2i - maxpi, p2i.3rd - maxpi))
-    # par(new = T)
-    # plot(d3[maxpi:(notch)],type="o", col=2)
-    # par(new = T)
-    # plot(d4[maxpi:(notch)],type="o", col=4); abline(h=0,col=4)
-    
-    # Depending type of pressure waveform p1 or p2 will equal max p
+    # Depending type of pressure waveform p1 or p2 will aprox equal max p
     # Find which is closest to max P
     distp1 <- abs(maxpi - p1i)
     distp2 <- abs(maxpi - p2i)
@@ -257,17 +297,18 @@ WaveAnalyses <- function(pressure,
     # Find dp/dt max
     dpdt.max <- which.max(d1)
     
-    # Find inflection after p1 (local max of 2nd derivative)
+    # Find inflection after p1 (local max of 2nd derivative per SphygmoCor)
     p1i2 <- 9999
     if(p1i < maxpi-3) {
       p1i2 <- which.max(d2[p1i:maxpi]) + (p1i - 1)
     }
     
-    # Find p1 from 1st D (local min of 1st derivative. Kelly et al. 10.1161/01.CIR.80.6.1652)
-    p1i1 <- 9999
-    if(p1i < maxpi-3) {
-      p1i1 <- which.min(d1[dpdt.max:p1i2]) + (dpdt.max - 1)
-    }
+    # Find p1 from 1st derivative (local min as per Kelly et al. 10.1161/01.CIR.80.6.1652)
+    # This method was simplified to the 4th derivative method but works fine here
+    # p1i1 <- 9999
+    # if(p1i < maxpi-3) {
+    #   p1i1 <- which.min(d1[dpdt.max:p1i2]) + (dpdt.max - 1)
+    # }
     
     # plot(pw,type="o"); abline(v=c(p1i, p1i1, p1i2), col=2)
     # par(new=T)
@@ -281,29 +322,18 @@ WaveAnalyses <- function(pressure,
            lwd = 3,
            ylab = "Pressure (mmHg)",
            xlab = "Time (s)")
-      grid (NULL,NULL, lty = 3, col = "lightgrey") 
+      grid(NULL,NULL, lty = 3, col = "lightgrey") 
       legend("topright", type, bty = 'n')
-      
-      # mtext(
-      #   c("Ft", "P1", "P2", "Ed", "P3"),
-      #   side = 3,
-      #   cex = .7,
-      #   at = c(time[foot],
-      #          time[p1i],
-      #          time[p2i],
-      #          time[notch],
-      #          time[notchpeak])
-      # )
       
       points(x = c(time[foot], 
                    time[p1i], 
-                   #time[p1i1], 
+                   time[p1i2], 
                    time[p2i], 
                    time[notch], 
                    time[notchpeak]),
              y = c(pw[foot], 
                    pw[p1i], 
-                   #pw[p1i1], 
+                   pw[p1i2], 
                    pw[p2i], 
                    pw[notch], 
                    pw[notchpeak]),
@@ -312,72 +342,53 @@ WaveAnalyses <- function(pressure,
              lwd = 3,
              cex = 1.7)
       
-      
-      points(x = time[p1i1],
-             y = pw[p1i1],
-             pch = "|",
-             col = 4,
-             lwd = 3,
-             cex = 1.7)
-      
-      
     }
     
     
     df <- data.frame(
       # Index of values
-      MaxP.index = maxpi,
-      Foot.index = foot,
-      P1.index = p1i,
-      P2.index = p2i,
-      Ed.index = notch,
-      P3.index = notchpeak,
-      P1x.index = p1i1,
-      DpDt.index = dpdt.max,
+      MaxP_index = maxpi,
+      Foot_index = foot,
+      P1_index = p1i,
+      P2_index = p2i,
+      Ed_index = notch,
+      P3_index = notchpeak,
+      #P1x_index = p1i1,
+      DpDt_index = dpdt.max,
       # Values in unit seconds
-      MaxP.sec = time[maxpi],
-      Foot.sec = time[foot],
-      P1.sec = time[p1i],
-      P2.sec = time[p2i],
-      Ed.sec = time[notch],
-      P3.sec = time[notchpeak],
-      P1x.sec = time[p1i1],
-      DpDt.sec = time[dpdt.max],
+      MaxP_sec = time[maxpi],
+      Foot_sec = time[foot],
+      P1_sec = time[p1i],
+      P2_sec = time[p2i],
+      Ed_sec = time[notch],
+      P3_sec = time[notchpeak],
+      #P1x_sec = time[p1i1],
+      DpDt_sec = time[dpdt.max],
       # Values in unit mmHg
-      MaxP.mmhg = pw[maxpi],
-      Foot.mmhg = pw[foot],
-      P1.mmhg = pw[p1i],
-      P2.mmhg = pw[p2i],
-      Ed.mmhg = pw[notch],
-      P3.mmhg = pw[notchpeak],
-      P1x.mmhg = pw[p1i1],
-      DpDt.mmhg = pw[dpdt.max],
-      AP.mmHg = ap,
+      MaxP_mmhg = pw[maxpi],
+      Foot_mmhg = pw[foot],
+      P1_mmhg = pw[p1i],
+      P2_mmhg = pw[p2i],
+      Ed_mmhg = pw[notch],
+      P3_mmhg = pw[notchpeak],
+      #P1x_mmhg = pw[p1i1],
+      DpDt_mmhg = pw[dpdt.max],
+      AP_mmHg = ap,
       AIX = aix,
-      # Err check
       Type = type
     )
     
+    # round values in df
+    df[,1:(length(df)-1)] <- round(df[,1:(length(df)-1)], 3) # round values in df
+    
+    # print values to console
+    # for(i in 1:length(df)){
+    #   print(paste0(names(df[i]),": ", df[1,i]), quote = F)
+    # }
     
     return(df)
     
   }
-  
-  MattLag <- function(x, k) {
-    
-    if (k > 0) {
-      d1 <- tail(x, k)
-      d2 <- c(rep(NA, k), x)[1:length(x)]
-      d2[is.na(d2)] <- d1
-      return(d2)
-    } else {
-      b1 <- head(x, abs(k))
-      b2 <- c(x[(-k + 1):length(x)], rep(NA, -k))
-      b2[is.na(b2)] <- b1
-      return(b2)
-    }
-  }
-  
   
   # Load data
   pw <- pressure[!is.na(pressure)]
@@ -409,11 +420,11 @@ WaveAnalyses <- function(pressure,
   # Get PWA parameters
   params <- pwa(pw)
   
-  Ifoot <- params$Foot.index
-  Inotch <- params$Ed.index 
-  Idiapeak <- params$P3.index
-  Ip1 <- params$P1.index
-  Ip2 <- params$P2.index
+  Ifoot <- params$Foot_index
+  Inotch <- params$Ed_index 
+  Idiapeak <- params$P3_index
+  Ip1 <- params$P1_index
+  Ip2 <- params$P2_index
   AugInx <- params$AIX
   
 
@@ -593,7 +604,7 @@ WaveAnalyses <- function(pressure,
   p3 <- round(pw[Idiapeak], 3)
   Tp3 <- round(tens[Idiapeak], 3)
   map <- round(mean(pw), 3)
-  Aix <- round(mean(AugInx), 3)
+  Aix <- round(AugInx, 3)
   qmax <- round(fw[Imq], 3)
   Tqmax <- round(tens[Imq], 3)
   qfoot <- round(fw[Ifoot], 3)
@@ -641,6 +652,7 @@ WaveAnalyses <- function(pressure,
   print(c('P1 ms...........', Tp1), quote = F)
   print(c('P2 mmHg.........', p2), quote = F)
   print(c('P2 ms...........', Tp2), quote = F)
+  print(c('Aix %...........', Aix), quote = F)
  
   print(c('Wi1.............', wi1), quote = F)
   print(c('Wi1 ms..........', Twi1), quote = F)
