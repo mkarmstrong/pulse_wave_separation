@@ -12,7 +12,6 @@ To run the function:
 ```R
 ans <- WaveAnalyses(mydata$pressure, 
                     mydata$flow, 
-                    lowpass = FALSE, # apply a lowpass filter to the pressure wave?
                     align = FALSE,   # time align the pressure & flow wave?
                     plot = TRUE)     # Plot results?
 ```
