@@ -4,10 +4,10 @@ This R script separates the blood pressure waveform into its forward and backwar
 
 To run the function:
 ```R
-ans <- WaveAnalyses(mydata$pressure, 
-                    mydata$flow, 
-                    align = FALSE,   # time align the pressure & flow wave?
-                    plot = TRUE)     # Plot results?
+ans <- wswi(mydata$pressure, 
+            mydata$flow, 
+            align = FALSE,   # time align the pressure & flow wave?
+            plot = TRUE)     # Plot results?
 ```
 
 Set `align = TRUE` if presure and flow curves require time alignment.
