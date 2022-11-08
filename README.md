@@ -1,4 +1,4 @@
-# Wave intensity/separation analysis in R
+# Wave intensity & separation analysis in R
 
 This R script separates the blood pressure waveform into its forward and backward traveling components using simultaneously measured blood pressure and flow waves sampled at 200hz.
 
