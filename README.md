@@ -12,15 +12,14 @@ ans <- wswi(mydata$pressure,
 
 Set `align = TRUE` if presure and flow curves require time alignment.
 <br/><br/>
-
 If `plot = TRUE` Results will be sent to the plot tab for inspection:
 
+<br/><br/>
 ![alt text](wswi_plot.png)
-
+<br/><br/>
 ![alt text](wswi2_plot.png)
 
 <br/><br/>
-
 The function returns the following values:
 
 **Variable**      | **Description**
