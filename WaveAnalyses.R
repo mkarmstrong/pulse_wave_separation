@@ -1,17 +1,4 @@
-WaveAnalyses <- function(pressure, 
-                         flow,
-                         align = FALSE, 
-                         plot = FALSE) {
-  
-  # pressure = averaged pressure waveform (numeric)
-  # flow = averaged flow waveform (numeric)
-  # lowpass = apply 10Hz low pass to pressure waveform (T/F)
-  # align = time align pressure and flow waveforms (T/F)
-  # plot = plot results (T/F)
-  
-  # Set up ------------------------------------------------------------------
-  
-  fsg721 <- function(x) {
+fsg721 <- function(x) {
   # 1st derivative with SG filter
   #2nd order polynomial
   C = c(0.107143, 0.071429, 0.035714)
@@ -29,22 +16,7 @@ WaveAnalyses <- function(pressure,
   dx = c(dx[7], dx[7], dx[7], dx[7:s], dx[s], dx[s], dx[s])
 }
 
-  MattLag <- function(x, k) {
-  
-  if (k > 0) {
-    d1 <- tail(x, k)
-    d2 <- c(rep(NA, k), x)[1:length(x)]
-    d2[is.na(d2)] <- d1
-    return(d2)
-  } else {
-    b1 <- head(x, abs(k))
-    b2 <- c(x[(-k + 1):length(x)], rep(NA, -k))
-    b2[is.na(b2)] <- b1
-    return(b2)
-  }
-}
-
-  Tintersect <- function(wf, plot = FALSE) {
+Tintersect <- function(wf, plot = FALSE) {
   
   k1 <- wf - min(wf[1:which.max(wf)])
   xvar <- (1:length(k1) - 1)
@@ -69,7 +41,7 @@ WaveAnalyses <- function(pressure,
   
 }
 
-  dicrotic <- function(pw, plot = FALSE) {
+dicrotic <- function(pw, plot = FALSE) {
   
   # Get derivatives
   dp1 <- fsg721(pw)
@@ -125,18 +97,17 @@ WaveAnalyses <- function(pressure,
   
 }
 
-  low.pass <- function(y, fq, do.plot = FALSE) {
+low.pass <- function(y, fq, do.plot = FALSE) {
   
   # Second order low pass filter
-  # Removes high frequency components below fq
-  # y = a numeric vector, typically a tree-ring series.
+  # Removes high frequency components above fq
+  # y = a numeric vector
   # fq = a numeric vector giving frequency or period of the filter.
-  # Rp = a numeric value giving the dB for the passband ripple.
   
   if (any(is.na(y))) stop("y contains NA")
   
-  ## n = a numeric value giving the order of the filter. 
-  ## Larger numbers create steeper fall off.
+  # n = a numeric value giving the order of the filter. 
+  # Larger numbers create steeper fall off.
   n = 4
   
   if (any(fq>1)) {
@@ -150,12 +121,10 @@ WaveAnalyses <- function(pressure,
   # sort f in case it's passed in backwards
   f <- sort(f)
   
-  filt <- signal::butter(
-    n = n,
-    W = f * 2,
-    type = "low",
-    plane = "z"
-  )
+  filt <- signal::butter(n = n,
+                         W = f * 2,
+                         type = "low",
+                         plane = "z")
   
   # remove mean
   yAvg <- mean(y)
@@ -178,7 +147,6 @@ WaveAnalyses <- function(pressure,
   filt.sig <- yFilt + yAvg
   
   if(isTRUE(do.plot)){
-    
     # plot results
     plot(filt.sig,
          type = "l",
@@ -187,29 +155,29 @@ WaveAnalyses <- function(pressure,
   
   # return filtered signal
   return(filt.sig)
-  
 }
 
-  RootSpline1 <- function (x, y, y0 = 0, verbose = TRUE) {
-    if (is.unsorted(x)) {
-      ind <- order(x)
-      x <- x[ind]; y <- y[ind]
-    }
-    z <- y - y0
-    ## which piecewise linear segment crosses zero?
-    k <- which(z[-1] * z[-length(z)] <= 0)
-    ## analytical root finding
-    xr <- x[k] - z[k] * (x[k + 1] - x[k]) / (z[k + 1] - z[k])
-    ## make a plot?
-    if (verbose) {
-      plot(x, y, "l"); abline(h = y0, lty = 2)
-      points(xr, rep.int(y0, length(xr)))
-    }
-    ## return roots
-    xr
+RootSpline1 <- function (x, y, y0 = 0, verbose = TRUE) {
+  
+  if (is.unsorted(x)) {
+    ind <- order(x)
+    x <- x[ind]; y <- y[ind]
   }
+  z <- y - y0
+  ## which piecewise linear segment crosses zero?
+  k <- which(z[-1] * z[-length(z)] <= 0)
+  ## analytical root finding
+  xr <- x[k] - z[k] * (x[k + 1] - x[k]) / (z[k + 1] - z[k])
+  ## make a plot?
+  if (verbose) {
+    plot(x, y, "l"); abline(h = y0, lty = 2)
+    points(xr, rep.int(y0, length(xr)))
+  }
+  ## return roots
+  xr
+}
 
-  pwa <- function(pw, filt = FALSE, plot = FALSE) {
+pwa <- function(pw, filt = FALSE, plot = FALSE) {
   
   # Low pass waveform
   if (isTRUE(filt)) {
@@ -252,9 +220,12 @@ WaveAnalyses <- function(pressure,
   # abline(h=0,v=p1i,col=2,lwd=1.5)
   
   # Find p2 from 3rd derivative
+  # when looking for p2 after sbp, the 3rd derivative method is more robust than
+  # the 4th derivative method.
   p2i <- which.min(d3[maxpi:(notch - 5)]) + maxpi
   
-  # Depending type of pressure waveform p1 or p2 will aprox equal max p
+  
+  # Depending type of pressure waveform p1 or p2 will approx equal max p
   # Find which is closest to max P
   distp1 <- abs(maxpi - p1i)
   distp2 <- abs(maxpi - p2i)
@@ -369,16 +340,46 @@ WaveAnalyses <- function(pressure,
   )
   
   # round values in df
-  df[,1:(length(df)-1)] <- round(df[,1:(length(df)-1)], 3) # round values in df
+  num_cols <- unlist(lapply(df, is.numeric)) # Identify numeric cols
+  df[num_cols] <-  round(df[num_cols], 3)    # round numeric cols
   
-  # print values to console
-  for(i in 1:length(df)){
-    print(paste0(names(df[i]),": ", df[1,i]), quote = F)
-  }
+  # # print values to console
+  # for(i in 1:length(df)){
+  #   print(paste0(names(df[i]),": ", df[1,i]), quote = F)
+  # }
   
   return(df)
   
+}
+
+MattLag <- function(x, k) {
+  
+  if (k > 0) {
+    d1 <- tail(x, k)
+    d2 <- c(rep(NA, k), x)[1:length(x)]
+    d2[is.na(d2)] <- d1
+    return(d2)
+  } else {
+    b1 <- head(x, abs(k))
+    b2 <- c(x[(-k + 1):length(x)], rep(NA, -k))
+    b2[is.na(b2)] <- b1
+    return(b2)
   }
+}
+
+
+wswi <- function(pressure, 
+                 flow,
+                 align = FALSE, 
+                 plot = FALSE) {
+  
+  # pressure = averaged pressure waveform (numeric)
+  # flow = averaged flow waveform (numeric)
+  # lowpass = apply 10Hz low pass to pressure waveform (T/F)
+  # align = time align pressure and flow waveforms (T/F)
+  # plot = plot results (T/F)
+  
+  # Set up ------------------------------------------------------------------
   
   # Load data
   pw <- pressure[!is.na(pressure)]
@@ -412,7 +413,7 @@ WaveAnalyses <- function(pressure,
   Ip2 <- params$P2_index
   AugInx <- params$AIX
   
-  
+
   # Align PQ ----------------------------------------------------------------
   
   # Find foot with intersecting tangents
@@ -430,7 +431,7 @@ WaveAnalyses <- function(pressure,
   
   
   # Estimate Zc -------------------------------------------------------------
-  
+
   # Isolate upstroke
   Imq <- which.max(uensavg)
   
@@ -445,9 +446,9 @@ WaveAnalyses <- function(pressure,
   rhoc <- linea$coefficients[[2]]  # Slope <- Zc
   c <- rhoc / rho                  # c = wave speed
   
-  
+
   # Wave intensity ----------------------------------------------------------
-  
+
   # Matt method
   # p = filter order
   # n = filter length (must be odd)
@@ -783,4 +784,4 @@ WaveAnalyses <- function(pressure,
   
   return(list(df1, df2))
   
-}
+} 
