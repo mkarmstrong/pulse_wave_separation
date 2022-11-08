@@ -17,6 +17,8 @@ If `plot = TRUE` Results will be sent to the plot tab for inspection:
 
 ![alt text](wswi_plot.png)
 
+![alt text](wswi2_plot.png)
+
 <br/><br/>
 
 The function returns the following values:
