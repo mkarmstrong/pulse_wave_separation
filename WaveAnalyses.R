@@ -1,3 +1,7 @@
+install.packages("signal")
+install.packages("pracma")
+
+
 fsg721 <- function(x) {
   # 1st derivative with SG filter
   #2nd order polynomial
